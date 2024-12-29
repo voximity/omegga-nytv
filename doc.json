@@ -1,0 +1,24 @@
+{
+  "name": "nytv",
+  "description": "New Years TV scene cycler",
+  "author": "voximity",
+  "config": {
+    "scene_directory": {
+      "type": "string",
+      "description": "The directory for TV scenes.",
+      "default": "scenes"
+    },
+    "autoplay_scenes": {
+      "type": "list",
+      "itemType": "string",
+      "description": "A list of scenes to autoplay.",
+      "default": []
+    },
+    "autoplay_interval_secs": {
+      "type": "number",
+      "description": "How many seconds each autoplayed scene should last.",
+      "default": 15
+    }
+  },
+  "commands": []
+}
