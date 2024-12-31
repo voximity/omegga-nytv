@@ -18,6 +18,11 @@
       "type": "number",
       "description": "How many seconds each autoplayed scene should last.",
       "default": 15
+    },
+    "scene_duration_secs": {
+      "type": "number",
+      "description": "How long to play a temporary scene for. Temporary scenes are played on interaction events.",
+      "default": 5
     }
   },
   "commands": []

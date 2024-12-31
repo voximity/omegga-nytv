@@ -1,4 +1,5 @@
 .build/
+scenes/
 node_modules/
 omegga.d.ts
 disabled.omegga

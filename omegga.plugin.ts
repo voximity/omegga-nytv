@@ -6,13 +6,14 @@ import OmeggaPlugin, {
   ReadSaveObject,
   IBrickBounds,
 } from 'omegga';
-import * as fs from 'node:fs/promises';
-import path from 'node:path';
+import fs from 'fs';
+import path from 'path';
 
 type Config = {
   scene_directory: string;
   autoplay_scenes: string[];
   autoplay_interval_secs: number;
+  scene_duration_secs: number;
 };
 type Storage = {};
 
@@ -127,21 +128,32 @@ export default class Plugin implements OmeggaPlugin<Config, Storage> {
 
   async init() {
     // load scenes from scene_directory
+    let numScenes = 0;
+
     try {
-      const files = await fs.readdir(this.config.scene_directory);
+      const files = await fs.promises.readdir(
+        path.join(__dirname, '..', this.config.scene_directory)
+      );
       const scenes = await Promise.all(
         files
           .filter((file) => file.endsWith('.brs'))
           .map(async (file) => {
-            const filePath = path.join(this.config.scene_directory, file);
-            const content = new Uint8Array(await fs.readFile(filePath));
+            const filePath = path.join(
+              __dirname,
+              '..',
+              this.config.scene_directory,
+              file
+            );
+            const content = await fs.promises.readFile(filePath);
+
             return [
               file.substring(0, file.length - 4),
               OMEGGA_UTIL.brs.read(content),
-            ];
+            ] as [string, ReadSaveObject];
           })
       );
 
+      numScenes = scenes.length;
       this.scenes = Object.fromEntries(scenes);
     } catch (err) {
       console.error('failed to load scenes! reason is below.');
@@ -149,7 +161,7 @@ export default class Plugin implements OmeggaPlugin<Config, Storage> {
       return;
     }
 
-    console.log(`loaded ${this.scenes.length} scenes`);
+    console.log(`loaded ${numScenes} scenes`);
 
     // determine which scenes to autoplay from config
     const autoplay = [];
@@ -163,6 +175,7 @@ export default class Plugin implements OmeggaPlugin<Config, Storage> {
     }
 
     this.config.autoplay_scenes = autoplay;
+
     // autoplay cycle with configured interval
     if (!this.config.autoplay_scenes.length) {
       console.warn(
@@ -174,6 +187,12 @@ export default class Plugin implements OmeggaPlugin<Config, Storage> {
 
     // allow interact components with `scene:my-scene` to override the current scene
     //   for a configured interval and pause the autoplay cycle
+    this.omegga.on('interact', (interaction) => {
+      if (!interaction.message.startsWith('scene:')) return;
+
+      const toPlay = interaction.message.substring('scene:'.length);
+      this.playTempScene(toPlay, this.config.scene_duration_secs);
+    });
   }
 
   async stop() {
